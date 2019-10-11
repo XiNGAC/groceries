@@ -1,0 +1,11 @@
+* calib_cam_to_cam *
+s  original image size 原始图像大小
+K  calibration matrices (unrectified) 校准矩阵（未校正）
+D  distortion coefficients (unrectified) 失真系数（未校正）
+R  rotation from camera 0 to camera i 从相机0到相机i的旋转矩阵
+t  translation from camera 0 to camera i 从相机0到相机i的平移矩阵
+S_react image size after rectification 校正后的图像尺寸
+R_react  rectifying rotation matrix 校正后的旋转矩阵
+p_react  projection matrix after rectification 校正后的投影矩阵
+
+i=0,1为灰度相机，i=2，3为彩色相机
