@@ -33,8 +33,12 @@ while True:
     img2_rectified = cv2.remap(frame2, camera_configs.right_map1, camera_configs.right_map2, cv2.INTER_LINEAR)
 
     # 将图片置为灰度图，为StereoBM作准备
-    imgL = cv2.cvtColor(img1_rectified, cv2.COLOR_BGR2GRAY)
-    imgR = cv2.cvtColor(img2_rectified, cv2.COLOR_BGR2GRAY)
+    # imgL = cv2.cvtColor(img1_rectified, cv2.COLOR_BGR2GRAY)
+    # imgR = cv2.cvtColor(img2_rectified, cv2.COLOR_BGR2GRAY)
+    # cv2.imwrite("imgL.jpg", imgL)
+    # cv2.imwrite("imgR.jpg", imgR)
+    imgL = frame1
+    imgR = frame2
 
     # 两个trackbar用来调节不同的参数查看效果
     # num = cv2.getTrackbarPos("num", "depth")
@@ -43,20 +47,30 @@ while True:
     #     #     blockSize += 1
     #     # if blockSize < 5:
     #     #     blockSize = 5
-
+    min_disp = 0
+    num_disp = 64 - min_disp
     num = 3
     blockSize = 9
-
+    window_size = 9
     # 根据Block Maching方法生成差异图（opencv里也提供了SGBM/Semi-Global Block Matching算法，有兴趣可以试试）
-    stereo = cv2.StereoBM_create(numDisparities=16*num, blockSize=blockSize)
-    # stereo = cv2.StereoSGBM_create(minDisparity=0, numDisparities=16*num, blockSize=blockSize)
+    # stereo = cv2.StereoBM_create(numDisparities=16*num, blockSize=blockSize)
+    stereo = cv2.StereoSGBM_create(minDisparity=min_disp, numDisparities=num_disp, blockSize=blockSize,
+                                   P1 = 8 * 3 * window_size**2,
+                                   P2 = 32 * 3 * window_size**2,
+                                   disp12MaxDiff = 1,
+                                   uniquenessRatio = 10,
+                                   speckleWindowSize = 100,
+                                   speckleRange = 32)
     print(1)
-    disparity = stereo.compute(imgL, imgR)
+    # disparity = stereo.compute(imgL, imgR)
+    disparity = stereo.compute(imgL, imgR).astype(np.float32) / 16.0
+    disparity = (disparity - min_disp) / num_disp
     print(2)
 
     disp = cv2.normalize(disparity, disparity, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    disp = cv2.medianBlur(disp,5)
     # 将图片扩展至3d空间中，其z方向的值则为当前的距离
-    threeD = cv2.reprojectImageTo3D(disparity.astype(np.float32)/16., camera_configs.Q)
+    threeD = cv2.reprojectImageTo3D(disparity, camera_configs.Q)
     cv2.imwrite("disp.jpg",disp)
     print(threeD[300][500])
     break
